@@ -1,0 +1,59 @@
+{
+  "devices": [
+    {
+      "id": "d1",
+      "name": "示例插座",
+      "type": "miot",
+      "ip": "<DEVICE_LAN_IP>",
+      "token": "<REPLACE_WITH_32_HEX_TOKEN>",
+      "model": "cuco.plug.v3",
+      "mapping": {
+        "power": {"siid": 2, "piid": 1}
+      }
+    },
+    {
+      "id": "cooker1",
+      "name": "示例电饭煲",
+      "type": "miot",
+      "ip": "<DEVICE_LAN_IP>",
+      "token": "<REPLACE_WITH_32_HEX_TOKEN>",
+      "model": "chunmi.cooker.c301",
+      "mapping": {
+        "status": {"siid": 2, "piid": 1},
+        "fault": {"siid": 2, "piid": 2},
+        "cook_mode": {"siid": 2, "piid": 5}
+      },
+      "value_labels": {
+        "status": {"1": "待机中", "2": "烹饪中", "3": "预约中", "4": "保温中", "5": "设备异常", "6": "固件升级中", "7": "烹饪已完成"},
+        "cook_mode": {"1": "快煮饭", "2": "精煮饭", "3": "煮粥", "4": "保温", "5": "自定义"}
+      },
+      "options": {
+        "cook_mode": [
+          {"value": 2, "label": "精煮饭"},
+          {"value": 1, "label": "快煮饭"},
+          {"value": 3, "label": "煮粥"},
+          {"value": 4, "label": "保温"},
+          {"value": 5, "label": "自定义"}
+        ]
+      },
+      "actions": {
+        "start_cook": {"siid": 2, "aiid": 1, "in": [{"piid": 5, "value": 2}], "label": "开始烹饪"},
+        "cancel_cooking": {"siid": 2, "aiid": 2, "in": [], "label": "取消烹饪"}
+      }
+    },
+    {
+      "id": "light1",
+      "name": "示例灯泡",
+      "type": "yeelight",
+      "ip": "<EXAMPLE_LAN_IP>",
+      "token": "<REPLACE_WITH_32_HEX_TOKEN>"
+    },
+    {
+      "id": "plug1",
+      "name": "示例老插座",
+      "type": "chuangmi_plug",
+      "ip": "<EXAMPLE_LAN_IP>",
+      "token": "<REPLACE_WITH_32_HEX_TOKEN>"
+    }
+  ]
+}

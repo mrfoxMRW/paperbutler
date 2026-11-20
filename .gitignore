@@ -1,0 +1,21 @@
+# ==== 敏感配置：含真实设备 token / 内网 IP / MAC，禁止提交 ====
+# 可提交的模板是 devices.example.json（里面是假 token）
+devices.json
+tokens.json
+token-extractor/tokens.json
+
+# ==== 本地环境 / 缓存 / 日志 ====
+.venv/
+token-extractor/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.log
+.DS_Store
+
+# token-extractor 是第三方仓库（MIT）。保留其源码与 LICENSE 一起分发，
+# 但不把它自己的 .git 元数据带进本项目版本库。
+token-extractor/.git/
+
+# 按需下载的第三方工具（由 setup.sh 拉取），不纳入本仓库
+token-extractor/

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<!--
+  Copyright (C) 2026 The paperbutler Authors
+  SPDX-License-Identifier: GPL-3.0-only
+  See LICENSE and NOTICE in the project root.
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>纸上管家 · 设备控制台</title>
+<style>
+  :root {
+    --bg: #f5f6f7;
+    --card: #ffffff;
+    --border: #e3e5e8;
+    --text: #1f2328;
+    --muted: #6b7280;
+    --accent: #ff6900;
+    --accent-soft: #fff1e8;
+    --on: #e53935;
+    --off: #9ca3af;
+    --danger-bg: #fef2f2;
+    --danger-text: #b91c1c;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 56px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; }
+  .badge {
+    font-size: 12px; color: var(--accent); background: var(--accent-soft);
+    padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .dev-name { font-size: 16px; font-weight: 600; }
+  .dev-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--off); flex: none; }
+  .dot.on { background: var(--on); box-shadow: 0 0 0 4px rgba(229,57,53,0.12); }
+  .switch {
+    position: relative; width: 48px; height: 28px; flex: none;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0; background: #d1d5db; border-radius: 999px;
+    cursor: pointer; transition: background .18s;
+  }
+  .slider::before {
+    content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: transform .18s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .slider { background: var(--on); }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
+  .switch input:disabled + .slider { opacity: .5; cursor: not-allowed; }
+  .row { margin-top: 18px; }
+  .row label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .row label b { color: var(--text); font-weight: 600; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .err {
+    margin-top: 14px; font-size: 13px; color: var(--danger-text);
+    background: var(--danger-bg); padding: 8px 12px; border-radius: 8px;
+  }
+  .empty {
+    background: var(--card); border: 1px dashed var(--border); border-radius: var(--radius);
+    padding: 40px 24px; text-align: center; color: var(--muted);
+  }
+  .empty code { background: #f0f1f3; padding: 2px 6px; border-radius: 5px; font-size: 13px; color: var(--text); }
+  .bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  button.refresh {
+    font: inherit; font-size: 13px; padding: 7px 14px; cursor: pointer;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+  }
+  button.refresh:hover { border-color: var(--accent); color: var(--accent); }
+  .foot { margin-top: 28px; font-size: 12px; color: var(--muted); }
+
+  .action-panel { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .status-line { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 13px; }
+  .status-key { color: var(--muted); }
+  .status-val { font-weight: 600; color: var(--text); }
+  .mode-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .mode-btn { font: inherit; font-size: 12px; padding: 6px 12px; border-radius: 16px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+  .mode-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .action-btns { display: flex; gap: 8px; margin-top: 16px; }
+  .act-btn { flex: 1; font: inherit; font-size: 13px; padding: 10px 8px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+  .act-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .act-btn:disabled { opacity: .6; cursor: wait; }
+  .act-btn:hover:not(:disabled) { filter: brightness(.96); }
+  /* 免责与商标声明页脚（与上游 python-miio 的 Disclaimer 同款） */
+  .disclaimer { margin: 28px 0 8px; text-align: center; font-size: 11px;
+                color: var(--muted); line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>纸上管家 · 设备控制台</h1>
+    <span class="badge">局域网直连 · 不走云端</span>
+  </header>
+  <p class="sub">通过开源库 python-miio（miIO / MIoT 局域网协议）直接向设备发送指令。设备 IP 与 token 来自 Xiaomi-cloud-tokens-extractor。</p>
+
+  <div class="bar">
+    <button class="refresh" onclick="loadDevices()">刷新状态</button>
+    <span id="statusText" style="font-size:12px;color:var(--muted)"></span>
+  </div>
+
+  <div id="grid" class="grid"></div>
+  <p class="foot">提示：token 在设备重置配网或某些固件升级后会变化，届时重新导出并更新 devices.json 即可。</p>
+</div>
+
+{% if not configured %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("grid").innerHTML =
+      '<div class="empty">未找到 <code>devices.json</code><br>服务已自动生成模板 <code>devices.example.json</code>，请填入设备 IP 和 token 后另存为 devices.json 并刷新。</div>';
+    document.getElementById("statusText").textContent = "等待配置";
+  });
+</script>
+{% else %}
+<script>
+const grid = document.getElementById("grid");
+const statusText = document.getElementById("statusText");
+let debounce = {};
+let selectedMode = {};   // 记录每个动作型设备当前选的模式
+
+function devTypeLabel(t) {
+  return {yeelight:"Yeelight 灯", chuangmi_plug:"插座 / 开关", plug:"插座 / 开关", miot:"MIoT 设备"}[t] || t;
+}
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function labelFor(d, key, val) {
+  const m = d.value_labels && d.value_labels[key];
+  if (m && m[String(val)] != null) return m[String(val)];
+  return val;
+}
+
+// 同时拉列表和每台设备的状态
+async function loadDevices() {
+  statusText.textContent = "加载中…";
+  try {
+    const res = await fetch("/devices");
+    const data = await res.json();
+    const list = data.devices || [];
+    await Promise.all(list.map(async d => {
+      try {
+        const r = await fetch("/devices/" + encodeURIComponent(d.id) + "/status");
+        const j = await r.json();
+        d.state = j.ok ? j : null;
+        d.error = j.ok ? null : j.error;
+      } catch (e) {
+        d.error = "状态读取失败";
+        d.state = null;
+      }
+    }));
+    render(list);
+    statusText.textContent = "已加载 " + list.length + " 台设备";
+  } catch (e) {
+    statusText.textContent = "加载失败: " + e;
+  }
+}
+
+function render(devices) {
+  grid.innerHTML = "";
+  if (!devices.length) {
+    grid.innerHTML = '<div class="empty">devices.json 里还没有设备</div>';
+    return;
+  }
+  devices.forEach(d => {
+    const hasActions = d.actions && d.actions.length;
+    const card = document.createElement("div");
+    card.className = "card";
+    let html = `
+      <div class="card-head">
+        <div>
+          <div class="dev-name">${esc(d.name)}</div>
+          <div class="dev-meta">${esc(devTypeLabel(d.type))} · ${esc(d.id)}</div>
+        </div>`;
+    // 有开关能力的设备显示拨动开关
+    if ((d.capabilities || []).includes("power")) {
+      const on = d.state && d.state.power;
+      html += `
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="dot ${on ? "on" : ""}"></span>
+          <label class="switch">
+            <input type="checkbox" ${on ? "checked" : ""} data-id="${esc(d.id)}" onchange="togglePower(this)" ${d.error ? "disabled" : ""}>
+            <span class="slider"></span>
+          </label>
+        </div>`;
+    }
+    html += `</div>`;
+
+    if (d.error) {
+      html += `<div class="err">${esc(d.error)}</div>`;
+    } else {
+      const caps = d.capabilities || [];
+      // 灯：亮度、色温滑杆
+      if (caps.includes("brightness")) html += sliderHTML(d, "brightness", "亮度", d.state && d.state.brightness, 1, 100);
+      if (caps.includes("color_temp")) html += sliderHTML(d, "color_temp", "色温", d.state && d.state.color_temp, 2700, 6500);
+
+      // 动作型设备（如电饭煲）：状态展示 + 模式选择 + 动作按钮
+      if (hasActions) html += actionPanelHTML(d);
+    }
+    card.innerHTML = html;
+    grid.appendChild(card);
+  });
+}
+
+function sliderHTML(d, cap, label, value, min, max) {
+  const v = (value == null) ? min : value;
+  return `<div class="row">
+      <label><span>${label}</span><b id="v-${cap}-${esc(d.id)}">${v}</b></label>
+      <input type="range" min="${min}" max="${max}" value="${v}"
+        data-id="${esc(d.id)}" data-cap="${cap}" oninput="onSlide(this)">
+    </div>`;
+}
+
+function actionPanelHTML(d) {
+  let html = `<div class="action-panel">`;
+  // 状态展示
+  const st = d.state || {};
+  if (st.status != null) {
+    html += `<div class="status-line">
+        <span class="status-key">当前状态</span>
+        <span class="status-val">${esc(labelFor(d, "status", st.status))}</span>
+      </div>`;
+  }
+  if (st.cook_mode != null) {
+    html += `<div class="status-line">
+        <span class="status-key">烹饪模式</span>
+        <span class="status-val">${esc(labelFor(d, "cook_mode", st.cook_mode))}</span>
+      </div>`;
+  }
+  // 模式选择
+  const opts = (d.options && d.options.cook_mode) || [];
+  if (opts.length) {
+    const cur = selectedMode[d.id] != null ? selectedMode[d.id] : st.cook_mode;
+    html += `<div class="row"><label><span>选择模式</span></label>
+      <div class="mode-btns">`;
+    opts.forEach(o => {
+      const active = Number(cur) === Number(o.value);
+      html += `<button type="button" class="mode-btn ${active ? "active" : ""}"
+        data-id="${esc(d.id)}" data-mode="${o.value}" onclick="selectMode(this)">${esc(o.label)}</button>`;
+    });
+    html += `</div></div>`;
+  }
+  // 动作按钮
+  html += `<div class="action-btns">`;
+  (d.actions || []).forEach(a => {
+    const label = (d.action_labels && d.action_labels[a]) || a;
+    const primary = a.indexOf("start") >= 0 || a.indexOf("开始") >= 0;
+    html += `<button type="button" class="act-btn ${primary ? "primary" : ""}"
+      data-id="${esc(d.id)}" data-action="${esc(a)}" onclick="runAction(this)">${esc(label)}</button>`;
+  });
+  html += `</div></div>`;
+  return html;
+}
+
+function selectMode(btn) {
+  const id = btn.dataset.id, mode = Number(btn.dataset.mode);
+  selectedMode[id] = mode;
+  btn.parentElement.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+async function runAction(btn) {
+  const id = btn.dataset.id, action = btn.dataset.action;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = "执行中…";
+  try {
+    let params = undefined;
+    // 开始烹饪：带上当前选择的模式
+    if (action.indexOf("start") >= 0) {
+      const card = btn.closest(".card");
+      const activeMode = card.querySelector(".mode-btn.active");
+      const modeVal = activeMode ? Number(activeMode.dataset.mode) : 2;
+      params = [{piid: 5, value: modeVal}];
+    }
+    const res = await fetch("/devices/" + encodeURIComponent(id) + "/action", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({action: action, params: params})
+    });
+    const r = await res.json();
+    if (!r.ok) throw new Error(r.error || "执行失败");
+    btn.textContent = "✓ 已执行";
+    setTimeout(loadDevices, 600);
+  } catch (e) {
+    btn.textContent = original;
+    alert("执行失败: " + e.message);
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }
+}
+
+async function togglePower(input) {
+  const id = input.dataset.id;
+  input.disabled = true;
+  try {
+    const res = await fetch("/devices/" + encodeURIComponent(id) + "/set", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({power: input.checked})
+    });
+    const r = await res.json();
+    if (!r.ok) throw new Error(r.error || "控制失败");
+  } catch (e) {
+    input.checked = !input.checked;
+    alert("控制失败: " + e.message);
+  } finally {
+    input.disabled = false;
+  }
+}
+
+function onSlide(input) {
+  const id = input.dataset.id, cap = input.dataset.cap;
+  document.getElementById(`v-${cap}-${esc(id)}`).textContent = input.value;
+  clearTimeout(debounce[id + cap]);
+  debounce[id + cap] = setTimeout(async () => {
+    try {
+      const res = await fetch("/devices/" + encodeURIComponent(id) + "/set", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({[cap]: Number(input.value)})
+      });
+      const r = await res.json();
+      if (!r.ok) throw new Error(r.error || "设置失败");
+    } catch (e) {
+      alert("设置失败: " + e.message);
+    }
+  }, 300);
+}
+
+loadDevices();
+setInterval(loadDevices, 15000);
+</script>
+
+{% endif %}
+<footer class="disclaimer">
+  纸上管家 paperbutler · 非官方社区项目，与被支持设备的任何公司均无关联 · GPL-3.0-only · 无担保
+</footer>
+</body>
+</html>
