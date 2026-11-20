@@ -11,7 +11,7 @@
 ## 这个仓库里有什么 / 没有什么
 
 ```
-GitDir/                        （作为 git 仓库根目录）
+paperbutler/                        （作为 git 仓库根目录）
 ├── app.py                      # Flask 服务：网页控制台 + HTTP 桥
 ├── templates/index.html        # 前端页面
 ├── requirements.txt            # 运行必需依赖（仅 2 个包）
